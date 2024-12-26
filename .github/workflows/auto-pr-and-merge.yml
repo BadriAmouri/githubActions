@@ -34,9 +34,9 @@ jobs:
     - name: Create a Pull Request
       uses: peter-evans/create-pull-request@v3
       with:
-        branch: ${{ github.head_ref }}  # Use the current branch
+        branch: ${{ github.ref }}  # Use the current branch
         title: "Auto PR for changes"
-        commit-message: "Automated changes from ${{ github.head_ref }}"
+        commit-message: "Automated changes from ${{ github.ref }}"
         body: "This PR was automatically created by GitHub Actions."
         base: main  # Merge into the main branch
 
