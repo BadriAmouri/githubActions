@@ -3,7 +3,7 @@ name: Auto PR and Merge
 on:
   push:
     branches:
-      - '*'  # This triggers on pushes to all branches
+      - '*'  # Trigger on push to any branch
 
 jobs:
   auto-pr-and-merge:
@@ -13,14 +13,21 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Extract Git commit data
-      uses: rlespinasse/git-commit-data-action@v1.x
-
-    - name: Raise PR
+    - name: Create a Pull Request
       uses: peter-evans/create-pull-request@v3
       with:
-        branch: "auto-pr-branch"
+        branch: ${{ github.head_ref }}  # Create PR from the current branch
         title: "Auto PR for changes"
-        commit-message: "Automated changes from the auto-pr-branch"
+        commit-message: "Automated changes from ${{ github.head_ref }}"
         body: "This PR was automatically created by GitHub Actions."
-        author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
+        base: main  # Merge into the main branch
+
+    - name: Merge Pull Request
+      if: steps.create_pr.outputs.pull-request-url != ''
+      run: |
+        PR_NUMBER=$(echo "${{ steps.create_pr.outputs.pull-request-url }}" | grep -oP '\d+$')
+        curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
+          -d '{"merge_method":"merge"}'
