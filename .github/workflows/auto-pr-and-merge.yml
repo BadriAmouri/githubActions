@@ -27,7 +27,8 @@ jobs:
         base: main  # Merge into the main branch
 
     - name: Check PR URL
-      run: echo "PR URL: ${{ steps.create_pr.outputs.pull-request-url }}"
+      run: |
+        echo "PR URL: ${{ steps.create_pr.outputs.pull-request-url }}"
 
     - name: Merge Pull Request
       if: steps.create_pr.outputs.pull-request-url != ''
