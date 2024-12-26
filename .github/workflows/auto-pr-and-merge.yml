@@ -3,33 +3,24 @@ name: Auto PR and Merge
 on:
   push:
     branches:
-      - '*'  # Triggers for all branches except default branches
+      - '*'  # This triggers on pushes to all branches
 
 jobs:
   auto-pr-and-merge:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-    - name: Create Pull Request
-      id: create_pr
-      uses: peter-evans/create-pull-request@v5
+    - name: Extract Git commit data
+      uses: rlespinasse/git-commit-data-action@v1.x
+
+    - name: Raise PR
+      uses: peter-evans/create-pull-request@v3
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.ref_name }}
-        commit-message: "Automated changes from ${{ github.ref_name }}"
-        title: "Automated Pull Request from ${{ github.ref_name }}"
+        branch: "auto-pr-branch"
+        title: "Auto PR for changes"
+        commit-message: "Automated changes from the auto-pr-branch"
         body: "This PR was automatically created by GitHub Actions."
-        base: main
-
-    - name: Auto-merge the Pull Request
-      if: steps.create_pr.outputs.pull-request-url != ''
-      run: |
-        PR_NUMBER=$(echo "${{ steps.create_pr.outputs.pull-request-url }}" | grep -oP '\d+$')
-        curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER/merge \
-          -d '{"merge_method":"merge"}'
+        author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
