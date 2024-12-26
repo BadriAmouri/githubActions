@@ -3,7 +3,10 @@ name: Auto PR and Merge
 on:
   push:
     branches:
-      - '*'  # Trigger on push to any branch
+      - '*'  # This triggers the workflow for pushes to any branch
+
+permissions:
+  pull-requests: write  # Ensures the token can create and merge pull requests
 
 jobs:
   auto-pr-and-merge:
@@ -13,40 +16,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    # Verify if Git is initialized
-    - name: Verify if Git is initialized
-      run: git rev-parse --is-inside-work-tree
+    - name: Extract Git commit data
+      uses: rlespinasse/git-commit-data-action@v1.x
 
-    # Show Git status (includes information on uncommitted changes)
-    - name: Show Git status
-      run: git status
-
-    # Show recent commits (to confirm correct commit history)
-    - name: Show recent commits
-      run: git log --oneline -n 5
-
-    # Validate that the working directory is clean
-    - name: Validate the working directory is clean
-      run: |
-        git diff --exit-code || echo "There are uncommitted changes."
-
-    # Create a Pull Request
-    - name: Create a Pull Request
+    - name: Raise PR
       uses: peter-evans/create-pull-request@v3
       with:
-        branch: ${{ github.ref }}  # Use the current branch
+        branch: "auto-pr-branch"
         title: "Auto PR for changes"
-        commit-message: "Automated changes from ${{ github.ref }}"
+        commit-message: "Automated changes from the auto-pr-branch"
         body: "This PR was automatically created by GitHub Actions."
-        base: main  # Merge into the main branch
+        author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
 
-    # Output the PR URL
-    - name: Check PR URL
-      run: |
-        echo "PR URL: ${{ steps.create_pr.outputs.pull-request-url }}"
-
-    # Merge Pull Request (if PR was created)
-    - name: Merge Pull Request
+    - name: Merge PR
       if: steps.create_pr.outputs.pull-request-url != ''
       run: |
         PR_NUMBER=$(echo "${{ steps.create_pr.outputs.pull-request-url }}" | grep -oP '\d+$')
